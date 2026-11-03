@@ -5,6 +5,11 @@ import time
 from datetime import datetime, timedelta, timezone # 🔥 加咗時區工具
 import pandas as pd
 
+# --- 🚨 暗號密碼鎖 (防街外人睇到) 🚨 ---
+if st.query_params.get("pwd") != st.secrets["APP_PASSWORD"]:
+    st.error("🚫 查無此頁或權限不足")
+    st.stop() # 截斷程式，下面嘅 Code 全部唔會執行！
+
 # --- 獲取強制香港時間 (UTC+8) ---
 def get_hk_time():
     tz_hk = timezone(timedelta(hours=8))
