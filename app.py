@@ -2,8 +2,14 @@ import streamlit as st
 import streamlit.components.v1 as components  
 import requests
 import time
-from datetime import datetime
+from datetime import datetime, timedelta, timezone # 🔥 加咗時區工具
 import pandas as pd
+
+# --- 獲取強制香港時間 (UTC+8) ---
+def get_hk_time():
+    tz_hk = timezone(timedelta(hours=8))
+    # 將時間轉返做普通格式，方便後面做加減數
+    return datetime.now(tz_hk).replace(tzinfo=None) 
 
 # --- 配置資訊 ---
 URL_INDEX = "https://api.ibob.ai/tricky/v1/tricky-index"
@@ -23,7 +29,7 @@ if "all_data" not in st.session_state:
     st.session_state.all_data = {i: {} for i in range(1, RACE_COUNT + 1)}
 if "start_times" not in st.session_state:
     st.session_state.start_times = {i: "" for i in range(1, RACE_COUNT + 1)}
-if "field_sizes" not in st.session_state: # 🔥 新增：用嚟記低每場有幾多隻馬
+if "field_sizes" not in st.session_state: 
     st.session_state.field_sizes = {i: 14 for i in range(1, RACE_COUNT + 1)}
 if "is_monitoring" not in st.session_state:
     st.session_state.is_monitoring = False
@@ -60,13 +66,12 @@ def sync_all_times():
                 for r in races:
                     r_no = r.get('no')
                     post_time = r.get('postTime') 
-                    field_size = r.get('wageringFieldSize', 14) # 🔥 讀取參賽馬匹數目 (預設14)
+                    field_size = r.get('wageringFieldSize', 14) 
                     
                     if r_no is not None:
                         if post_time:
                             time_str = post_time.split('T')[1][:5]
                             st.session_state.start_times[int(r_no)] = time_str
-                        # 記錄呢場有幾多隻馬
                         st.session_state.field_sizes[int(r_no)] = field_size
             
             st.session_state.init_done = True
@@ -94,15 +99,15 @@ def process_data(race_num, data):
     mins_left = -999
     if len(t_str) == 5:
         try:
-            target = datetime.combine(datetime.now().date(), datetime.strptime(t_str, "%H:%M").time())
-            mins_left = (target - datetime.now()).total_seconds() / 60
+            # 🔥 將 datetime.now() 全部換做 get_hk_time()
+            target = datetime.combine(get_hk_time().date(), datetime.strptime(t_str, "%H:%M").time())
+            mins_left = (target - get_hk_time()).total_seconds() / 60
         except:
             pass
         
     for item in data:
         h_no = str(item['horseNo'])
         
-        # 安全機制：如果呢隻馬未喺字典出現過，就幫佢開個位
         if h_no not in st.session_state.all_data[race_num]:
             st.session_state.all_data[race_num][h_no] = {}
             
@@ -165,8 +170,9 @@ with c2:
     t_str = st.session_state.start_times.get(curr_race, "")
     if len(t_str) == 5:
         try:
-            target = datetime.combine(datetime.now().date(), datetime.strptime(t_str, "%H:%M").time())
-            diff_seconds = int((target - datetime.now()).total_seconds())
+            # 🔥 將 datetime.now() 換做 get_hk_time()
+            target = datetime.combine(get_hk_time().date(), datetime.strptime(t_str, "%H:%M").time())
+            diff_seconds = int((target - get_hk_time()).total_seconds())
             
             html_code = f"""
             <div style="font-family: 'Source Sans Pro', sans-serif; padding-top: 5px;">
@@ -204,10 +210,9 @@ with c2:
 # 表格顯示
 st.subheader(f"📊 {selected_race_str} 數據")
 race_data = st.session_state.all_data[curr_race]
-current_field_size = st.session_state.field_sizes.get(curr_race, 14) # 🔥 讀取當前場次嘅馬匹數目
+current_field_size = st.session_state.field_sizes.get(curr_race, 14) 
 
 df_data = []
-# 🔥 根據出賽馬匹數量（current_field_size）嚟建立行數
 for h_idx in range(1, current_field_size + 1):
     h_no = str(h_idx)
     row = {"馬號": h_no, "目前": race_data.get(h_no, {}).get("current", "--")}
@@ -216,10 +221,7 @@ for h_idx in range(1, current_field_size + 1):
     df_data.append(row)
 
 df = pd.DataFrame(df_data)
-
-# 🔥 動態計算表格高度：每行高度大約 36px，加埋頂部標題列同少少邊距
 dynamic_height = (current_field_size + 1) * 36 + 20
-
 st.dataframe(df, width="stretch", height=dynamic_height, hide_index=True)
 
 with st.expander("🛠️ IT大師除錯模式"):
