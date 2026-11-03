@@ -2,7 +2,7 @@ import streamlit as st
 import streamlit.components.v1 as components  
 import requests
 import time
-from datetime import datetime, timedelta, timezone # 🔥 加咗時區工具
+from datetime import datetime, timedelta, timezone 
 import pandas as pd
 
 # --- 🚨 暗號密碼鎖 (防街外人睇到) 🚨 ---
@@ -12,6 +12,7 @@ if st.query_params.get("pwd") != st.secrets["APP_PASSWORD"]:
 
 # --- 獲取強制香港時間 (UTC+8) ---
 def get_hk_time():
+# ...(下面保留你原本所有 Code)...
     tz_hk = timezone(timedelta(hours=8))
     # 將時間轉返做普通格式，方便後面做加減數
     return datetime.now(tz_hk).replace(tzinfo=None) 
