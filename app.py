@@ -15,7 +15,7 @@ def get_hk_time():
 URL_INDEX = "https://api.ibob.ai/tricky/v1/tricky-index"
 URL_LIST = "https://api.ibob.ai/race/list-races"
 HEADERS = {
-    "token": "fe39e8b6e4c343d89f46ab65cec060b6", 
+    "token": st.secrets["IBOB_TOKEN"], 
     "User-Agent": "uni-app-x/4.87",
     "v-app": "1.2.7",
     "Content-Type": "application/json"
